@@ -58,7 +58,9 @@ _logger = logging.getLogger(__name__)
 _IS_SQS_INSTRUMENTED_ATTRIBUTE = "_otel_boto3sqs_instrumented"
 
 print("[boto3sqs] loaded")
-
+_logger.warning(
+    "[boto3sqs] loaded instrumentation version %s", __version__
+)
 
 class Boto3SQSGetter(Getter[CarrierT]):
     def get(self, carrier: CarrierT, key: str) -> Optional[List[str]]:
