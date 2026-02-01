@@ -424,6 +424,10 @@ class Boto3SQSInstrumentor(BaseInstrumentor):
         setattr(sqs_class, _IS_SQS_INSTRUMENTED_ATTRIBUTE, False)
 
     def _instrument(self, **kwargs: Dict[str, Any]) -> None:
+        print("[boto3sqs] instrument")
+        _logger.warning(
+            "[boto3sqs] instrument"
+        )
         self._tracer_provider: Optional[TracerProvider] = kwargs.get(
             "tracer_provider"
         )
