@@ -73,11 +73,12 @@ import logging
 import os
 import time
 from importlib import import_module
-from typing import Any, Callable, Collection
+from typing import Any, Callable, Collection, List, Optional, Mapping
 from urllib.parse import urlencode
 
 from wrapt import wrap_function_wrapper
 
+from opentelemetry import propagate, trace
 from opentelemetry import context as context_api
 from opentelemetry.context.context import Context
 from opentelemetry.instrumentation.aws_lambda.package import _instruments
@@ -86,6 +87,7 @@ from opentelemetry.instrumentation.instrumentor import BaseInstrumentor
 from opentelemetry.instrumentation.utils import unwrap
 from opentelemetry.metrics import MeterProvider, get_meter_provider
 from opentelemetry.propagate import get_global_textmap
+from opentelemetry.propagators.textmap import CarrierT, Getter
 from opentelemetry.semconv._incubating.attributes.cloud_attributes import (
     CLOUD_ACCOUNT_ID,
     CLOUD_RESOURCE_ID,
@@ -106,6 +108,7 @@ from opentelemetry.semconv._incubating.attributes.net_attributes import (
     NET_HOST_NAME,
 )
 from opentelemetry.trace import (
+    Link,
     Span,
     SpanKind,
     TracerProvider,
@@ -122,6 +125,25 @@ ORIG_HANDLER = "ORIG_HANDLER"
 OTEL_INSTRUMENTATION_AWS_LAMBDA_FLUSH_TIMEOUT = (
     "OTEL_INSTRUMENTATION_AWS_LAMBDA_FLUSH_TIMEOUT"
 )
+
+
+class Boto3SQSGetter(Getter[CarrierT]):
+    def get(self, carrier: CarrierT, key: str) -> Optional[List[str]]:
+        msg_attr = carrier.get(key)
+        if not isinstance(msg_attr, Mapping):
+            return None
+
+        value = msg_attr.get("StringValue")
+        if value is None:
+            return None
+
+        return [value]
+
+    def keys(self, carrier: CarrierT) -> List[str]:
+        return list(carrier.keys())
+
+
+boto3sqs_getter = Boto3SQSGetter()
 
 
 def _default_event_context_extractor(lambda_event: Any) -> Context:
@@ -288,6 +310,7 @@ def _instrument(
             lambda_event,
             event_context_extractor,
         )
+        links = []
 
         try:
             event_source = lambda_event["Records"][0].get(
@@ -305,6 +328,15 @@ def _instrument(
                 # https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-content-structure.html
                 # https://docs.aws.amazon.com/lambda/latest/dg/with-ddb.html
                 span_kind = SpanKind.CONSUMER
+
+                if event_source == "aws:sqs":
+                    messages = lambda_event.get("Records", [])
+                    for message in messages:
+                        message_attributes = message.get("messageAttributes", {})
+                        ctx = propagate.extract(message_attributes, getter=boto3sqs_getter)
+                        parent_span_ctx = trace.get_current_span(ctx).get_span_context()
+                        if parent_span_ctx.is_valid:
+                            links.append(Link(context=parent_span_ctx))
             else:
                 span_kind = SpanKind.SERVER
         except (IndexError, KeyError, TypeError):
@@ -317,11 +349,14 @@ def _instrument(
             schema_url="https://opentelemetry.io/schemas/1.11.0",
         )
 
+
+
         token = context_api.attach(parent_context)
         try:
             with tracer.start_as_current_span(
                 name=orig_handler_name,
                 kind=span_kind,
+                links=[],
             ) as span:
                 if span.is_recording():
                     lambda_context = args[1]
