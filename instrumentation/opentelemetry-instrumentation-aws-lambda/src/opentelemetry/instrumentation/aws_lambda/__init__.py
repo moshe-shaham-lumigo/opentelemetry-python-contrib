@@ -134,6 +134,9 @@ logger.warning(
 class Boto3SQSGetter(Getter[CarrierT]):
     def get(self, carrier: CarrierT, key: str) -> Optional[List[str]]:
         msg_attr = carrier.get(key)
+        logger.warning(
+            "[aws-lambda] key: %s, msg_attr: %s", key, msg_attr
+        )
         if not isinstance(msg_attr, Mapping):
             return None
 
