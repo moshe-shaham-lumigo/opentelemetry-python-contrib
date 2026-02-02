@@ -125,6 +125,10 @@ ORIG_HANDLER = "ORIG_HANDLER"
 OTEL_INSTRUMENTATION_AWS_LAMBDA_FLUSH_TIMEOUT = (
     "OTEL_INSTRUMENTATION_AWS_LAMBDA_FLUSH_TIMEOUT"
 )
+print("[aws-lambda] loaded")
+logger.warning(
+    "[aws-lambda] loaded instrumentation version %s", __version__
+)
 
 
 class Boto3SQSGetter(Getter[CarrierT]):
