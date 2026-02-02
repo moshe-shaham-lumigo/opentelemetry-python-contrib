@@ -137,13 +137,20 @@ class Boto3SQSGetter(Getter[CarrierT]):
         logger.warning(
             "[aws-lambda] key: %s, msg_attr: %s", key, msg_attr
         )
+        logger.warning(
+            "[aws-lambda] isinstance: %s", isinstance(msg_attr, Mapping)
+        )
         if not isinstance(msg_attr, Mapping):
             return None
 
-        value = msg_attr.get("StringValue")
+        value = msg_attr.get("stringValue")
         if value is None:
             return None
 
+
+        logger.warning(
+            "[aws-lambda] value: %s", value
+        )
         return [value]
 
     def keys(self, carrier: CarrierT) -> List[str]:
