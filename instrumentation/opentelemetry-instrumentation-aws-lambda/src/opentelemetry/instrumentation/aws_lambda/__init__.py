@@ -333,13 +333,25 @@ def _instrument(
                 # https://docs.aws.amazon.com/lambda/latest/dg/with-ddb.html
                 span_kind = SpanKind.CONSUMER
 
+                logger.warning(
+                    "[aws-lambda] event_source: %s", event_source
+                )
                 if event_source == "aws:sqs":
                     messages = lambda_event.get("Records", [])
                     for message in messages:
                         message_attributes = message.get("messageAttributes", {})
+                        logger.warning(
+                            "[aws-lambda] message_attributes: %s", message_attributes
+                        )
                         ctx = propagate.extract(message_attributes, getter=boto3sqs_getter)
+                        logger.warning(
+                            "[aws-lambda] ctx: %s", ctx
+                        )
                         parent_span_ctx = trace.get_current_span(ctx).get_span_context()
                         if parent_span_ctx.is_valid:
+                            logger.warning(
+                                "[aws-lambda] adding link"
+                            )
                             links.append(Link(context=parent_span_ctx))
             else:
                 span_kind = SpanKind.SERVER
