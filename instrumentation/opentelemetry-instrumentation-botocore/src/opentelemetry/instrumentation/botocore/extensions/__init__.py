@@ -34,6 +34,7 @@ def _lazy_load(module, cls):
 _KNOWN_EXTENSIONS = {
     "bedrock-runtime": _lazy_load(".bedrock", "_BedrockRuntimeExtension"),
     "dynamodb": _lazy_load(".dynamodb", "_DynamoDbExtension"),
+    "events": _lazy_load(".events", "_EventsExtension"),
     "lambda": _lazy_load(".lmbd", "_LambdaExtension"),
     "secretsmanager": _lazy_load(
         ".secretsmanager", "_SecretsManagerExtension"
