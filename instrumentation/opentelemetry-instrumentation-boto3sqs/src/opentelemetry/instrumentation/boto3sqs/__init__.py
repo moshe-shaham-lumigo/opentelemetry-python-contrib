@@ -57,10 +57,6 @@ _logger = logging.getLogger(__name__)
 
 _IS_SQS_INSTRUMENTED_ATTRIBUTE = "_otel_boto3sqs_instrumented"
 
-print("[boto3sqs] loaded")
-_logger.warning(
-    "[boto3sqs] loaded instrumentation version %s", __version__
-)
 
 class Boto3SQSGetter(Getter[CarrierT]):
     def get(self, carrier: CarrierT, key: str) -> Optional[List[str]]:
@@ -424,10 +420,6 @@ class Boto3SQSInstrumentor(BaseInstrumentor):
         setattr(sqs_class, _IS_SQS_INSTRUMENTED_ATTRIBUTE, False)
 
     def _instrument(self, **kwargs: Dict[str, Any]) -> None:
-        print("[boto3sqs] instrument")
-        _logger.warning(
-            "[boto3sqs] instrument"
-        )
         self._tracer_provider: Optional[TracerProvider] = kwargs.get(
             "tracer_provider"
         )
