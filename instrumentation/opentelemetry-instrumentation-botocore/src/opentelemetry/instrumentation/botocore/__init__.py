@@ -118,8 +118,7 @@ from opentelemetry.trace.span import Span
 
 logger = logging.getLogger(__name__)
 
-print("Loading Botocore Instrumentation")
-logger.warning("Loading Botocore Instrumentation")
+print("Loading Botocore Instrumentation 2")
 
 class BotocoreInstrumentor(BaseInstrumentor):
     """An instrumentor for Botocore.
