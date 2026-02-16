@@ -96,10 +96,11 @@ class _OpPutRecord(_KinesisOperation):
         data = entry.get("Data")
         if data is None:
             return
-
+        use_bytes = False
         try:
             if isinstance(data, bytes):
                 data_str = data.decode("utf-8")
+                use_bytes = True
             else:
                 data_str = data
             data_dict = json.loads(data_str)
@@ -110,7 +111,8 @@ class _OpPutRecord(_KinesisOperation):
             return
 
         inject(data_dict)
-        entry["Data"] = json.dumps(data_dict).encode("utf-8")
+        data_dump = json.dumps(data_dict)
+        entry["Data"] = json.dumps(data_dict).encode("utf-8") if use_bytes else data_dump
 
 
 class _OpPutRecords(_OpPutRecord):
